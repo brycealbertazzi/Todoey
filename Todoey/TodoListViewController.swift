@@ -10,11 +10,16 @@ import UIKit
 
 class TodoListViewController: UITableViewController {
 
+    let ITEM_ARRAY_KEY: String = "ItemArrayKey"
     var itemArray = ["Find Child", "Shopping", "Swimming", "Fishing"]
+    var defaults = UserDefaults.standard
     
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view.
+        if let items = defaults.array(forKey: ITEM_ARRAY_KEY) as? [String] {
+            itemArray = items
+        } else {print("Item Array Does Not Exist!!!")}
     }
     
     //MARK: - Tableview Datasource Methods
@@ -22,9 +27,9 @@ class TodoListViewController: UITableViewController {
         return itemArray.count
     }
     
-    let cellID = "ToDoItemCell"
+    let CELL_ID = "ToDoItemCell"
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: cellID, for: indexPath)
+        let cell = tableView.dequeueReusableCell(withIdentifier: CELL_ID, for: indexPath)
         cell.textLabel?.text = itemArray[indexPath.row]
         return cell
     }
@@ -47,7 +52,14 @@ class TodoListViewController: UITableViewController {
         let action = UIAlertAction(title: "Add Item", style: .default) { (action) in
             //What happens when the user clicks the Add Item button
             self.itemArray.append(textField.text!)
-            self.tableView.reloadData()
+            
+            //Save itemArray into userdefaults
+            self.defaults.set(self.itemArray, forKey: self.ITEM_ARRAY_KEY)
+            
+            let indexPath = IndexPath(row: self.itemArray.count - 1, section: 0)
+            self.tableView.beginUpdates()
+            self.tableView.insertRows(at: [indexPath], with: .automatic)
+            self.tableView.endUpdates()
         }
         alert.addTextField { (alertTextField) in
             //Called when the text field is added as soon as the addButton in the navBar is pressed
