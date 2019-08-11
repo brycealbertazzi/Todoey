@@ -11,15 +11,39 @@ import UIKit
 class TodoListViewController: UITableViewController {
 
     let ITEM_ARRAY_KEY: String = "ItemArrayKey"
-    var itemArray = ["Find Child", "Shopping", "Swimming", "Fishing"]
-    var defaults = UserDefaults.standard
+    var itemArray: [Item] = [Item]()
+    //userDomainMask is the user's home directory
+    let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Items.plist")
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do any additional setup after loading the view.
-        if let items = defaults.array(forKey: ITEM_ARRAY_KEY) as? [String] {
-            itemArray = items
-        } else {print("Item Array Does Not Exist!!!")}
+        // Do any additional setup after loading the view
+        
+        //Load items from Items.plist
+        loadItems()
+    }
+    
+    //MARK: - Model Manipulation Methods
+    func saveItems() {
+        //Save itemArray into userdefaults
+        let encoder = PropertyListEncoder()
+        do {
+            let data = try encoder.encode(self.itemArray)
+            try data.write(to: self.dataFilePath!)
+        } catch {
+            print("Error encoding item array")
+        }
+    }
+    
+    func loadItems() {
+        
+        let data = try? Data(contentsOf: dataFilePath!)
+        let decoder = PropertyListDecoder()
+        do {
+            itemArray = try decoder.decode([Item].self, from: data!)
+        } catch {
+            print("Error decoding item array")
+        }
     }
     
     //MARK: - Tableview Datasource Methods
@@ -30,17 +54,28 @@ class TodoListViewController: UITableViewController {
     let CELL_ID = "ToDoItemCell"
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: CELL_ID, for: indexPath)
-        cell.textLabel?.text = itemArray[indexPath.row]
+        cell.textLabel?.text = itemArray[indexPath.row].title
+        
+        //Check if previously checked in previous app sessions
+        if itemArray[indexPath.row].done {
+            cell.accessoryType = .checkmark
+        } else {
+            cell.accessoryType = .none
+        }
+        
         return cell
     }
     
     //MARK: - Tableview Delegate Methods
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        if tableView.cellForRow(at: indexPath)?.accessoryType == .checkmark {
+        if itemArray[indexPath.row].done {
             tableView.cellForRow(at: indexPath)?.accessoryType = .none
-        } else {
-            tableView.cellForRow(at: indexPath)?.accessoryType = .checkmark
-        }
+        } else {tableView.cellForRow(at: indexPath)?.accessoryType = .checkmark}
+        
+        itemArray[indexPath.row].done = !itemArray[indexPath.row].done
+        //Save done val to endocerData
+        saveItems()
+        
         tableView.deselectRow(at: indexPath, animated: true)
     }
     
@@ -51,10 +86,12 @@ class TodoListViewController: UITableViewController {
         let alert = UIAlertController(title: "Add New TodoeyItem", message: "", preferredStyle: .alert)
         let action = UIAlertAction(title: "Add Item", style: .default) { (action) in
             //What happens when the user clicks the Add Item button
-            self.itemArray.append(textField.text!)
+            let newItem : Item = Item()
+            newItem.title = textField.text!
             
-            //Save itemArray into userdefaults
-            self.defaults.set(self.itemArray, forKey: self.ITEM_ARRAY_KEY)
+            self.itemArray.append(newItem)
+            
+            self.saveItems()
             
             let indexPath = IndexPath(row: self.itemArray.count - 1, section: 0)
             self.tableView.beginUpdates()
@@ -70,6 +107,8 @@ class TodoListViewController: UITableViewController {
         alert.addAction(action)
         present(alert, animated: true, completion: nil)
     }
+    
+    
     
 }
 

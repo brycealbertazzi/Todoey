@@ -36,6 +36,7 @@
                     <toolbarItems/>
                     <navigationItem key="navigationItem" title="Todoey" id="vda-r3-Pp1" userLabel="Todoey">
                         <barButtonItem key="rightBarButtonItem" systemItem="add" id="wjt-q4-EEU">
+                            <color key="tintColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                             <connections>
                                 <action selector="addButtonPressed:" destination="3yp-Bv-zw7" id="ngT-Rz-3oI"/>
                             </connections>
