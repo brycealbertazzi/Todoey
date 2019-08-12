@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import CoreData
 
 class TodoListViewController: UITableViewController {
 
@@ -19,31 +20,35 @@ class TodoListViewController: UITableViewController {
         super.viewDidLoad()
         // Do any additional setup after loading the view
         
-        //Load items from Items.plist
+        print(FileManager.default.urls(for: .documentDirectory, in: .userDomainMask))
+        
+        //Load items from DB
         loadItems()
     }
     
+    
     //MARK: - Model Manipulation Methods
+    let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
+    //UIApplication.shared corresponds to the current app as an object
+    
     func saveItems() {
-        //Save itemArray into userdefaults
-        let encoder = PropertyListEncoder()
+        //Save itemArray into DB
         do {
-            let data = try encoder.encode(self.itemArray)
-            try data.write(to: self.dataFilePath!)
+           try context.save()
         } catch {
-            print("Error encoding item array")
+           print("Error saving context \(error)")
         }
+        
     }
     
-    func loadItems() {
-        
-        let data = try? Data(contentsOf: dataFilePath!)
-        let decoder = PropertyListDecoder()
+    func loadItems(with request: NSFetchRequest<Item> = /*Default Val*/ Item.fetchRequest()) {
+        //Read data from database
         do {
-            itemArray = try decoder.decode([Item].self, from: data!)
+         itemArray = try context.fetch(request) //Load itemArray with the contents from the request
         } catch {
-            print("Error decoding item array")
+            print("Error fetching data from context \(error)")
         }
+        
     }
     
     //MARK: - Tableview Datasource Methods
@@ -73,10 +78,28 @@ class TodoListViewController: UITableViewController {
         } else {tableView.cellForRow(at: indexPath)?.accessoryType = .checkmark}
         
         itemArray[indexPath.row].done = !itemArray[indexPath.row].done
-        //Save done val to endocerData
-        saveItems()
         
         tableView.deselectRow(at: indexPath, animated: true)
+    }
+    
+    func addRowTableView() {
+        //Update the table view
+        let indexPath = IndexPath(row: itemArray.count - 1, section: 0)
+        tableView.beginUpdates()
+        tableView.insertRows(at: [indexPath], with: .automatic)
+        tableView.endUpdates()
+    }
+    
+    func deleteItem(rowIndex: Int) {
+        //Update the table view
+        let indexPath = IndexPath(row: rowIndex, section: 0)
+        context.delete(itemArray[rowIndex]) //Delete from database
+        itemArray.remove(at: rowIndex) //Remove from itemArray
+        tableView.beginUpdates()
+        tableView.deleteRows(at: [indexPath], with: .automatic)
+        tableView.endUpdates()
+        
+        saveItems()
     }
     
     //MARK: - Add New Items
@@ -86,17 +109,16 @@ class TodoListViewController: UITableViewController {
         let alert = UIAlertController(title: "Add New TodoeyItem", message: "", preferredStyle: .alert)
         let action = UIAlertAction(title: "Add Item", style: .default) { (action) in
             //What happens when the user clicks the Add Item button
-            let newItem : Item = Item()
+            //Save item to DataModel
+            let newItem : Item = Item(context: self.context)
             newItem.title = textField.text!
+            newItem.done = false
             
             self.itemArray.append(newItem)
-            
             self.saveItems()
             
-            let indexPath = IndexPath(row: self.itemArray.count - 1, section: 0)
-            self.tableView.beginUpdates()
-            self.tableView.insertRows(at: [indexPath], with: .automatic)
-            self.tableView.endUpdates()
+            self.addRowTableView()
+            
         }
         alert.addTextField { (alertTextField) in
             //Called when the text field is added as soon as the addButton in the navBar is pressed
@@ -108,7 +130,40 @@ class TodoListViewController: UITableViewController {
         present(alert, animated: true, completion: nil)
     }
     
-    
-    
 }
 
+extension TodoListViewController: UISearchBarDelegate {
+    
+    //MARK: = Searchbar methods
+    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+        
+        //Query the DB to get the results the user is looking for
+        let request : NSFetchRequest<Item> = Item.fetchRequest()
+        
+        //NSPredicate is a specification class for how data should be fetched
+        request.predicate = NSPredicate(format: "title BEGINSWITH[cd] %@", searchBar.text!)
+        //For all items in itemArray search for the ones whose title property begins with %@(whatever is typed in the searchbar)
+        
+        //Sorts our results from A-Z
+        request.sortDescriptors = [NSSortDescriptor(key: "title", ascending: true)]
+        
+        //Attempt to fecth from DB the results we've specified in our 'request'
+        loadItems(with: request)
+        
+        tableView.reloadData()
+    }
+    
+    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+        if searchBar.text?.count == 0 {
+            //If the searchbar is empty
+            self.loadItems() //Show all existing items in table view
+            tableView.reloadData()
+            
+            DispatchQueue.main.async { //To run this code on the main queue (in the foreground)
+                searchBar.resignFirstResponder()
+            }
+            
+        }
+    }
+    
+}
