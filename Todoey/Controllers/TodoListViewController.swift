@@ -13,6 +13,13 @@ class TodoListViewController: UITableViewController {
 
     let ITEM_ARRAY_KEY: String = "ItemArrayKey"
     var itemArray: [Item] = [Item]()
+    var selectedCategory : Category? {
+        didSet{
+            //What to do as soon as selectedCategory is given a value
+            loadItems()
+        }
+    }//nil until we select a category in CategoryViewController
+    
     //userDomainMask is the user's home directory
     let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Items.plist")
     
@@ -22,8 +29,6 @@ class TodoListViewController: UITableViewController {
         
         print(FileManager.default.urls(for: .documentDirectory, in: .userDomainMask))
         
-        //Load items from DB
-        loadItems()
     }
     
     
@@ -41,7 +46,19 @@ class TodoListViewController: UITableViewController {
         
     }
     
-    func loadItems(with request: NSFetchRequest<Item> = /*Default Val*/ Item.fetchRequest()) {
+    func loadItems(with request: NSFetchRequest<Item> = /*Default Val*/ Item.fetchRequest(), predicate: NSPredicate? = nil) {
+        
+    
+        let categoryPredicate = NSPredicate(format: "parentCategory.name MATCHES %@", selectedCategory!.name!)
+            
+        
+        
+        if let additionalPredicate = predicate {
+            request.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [categoryPredicate, additionalPredicate])
+        } else {
+            request.predicate = categoryPredicate
+        }
+        
         //Read data from database
         do {
          itemArray = try context.fetch(request) //Load itemArray with the contents from the request
@@ -84,6 +101,7 @@ class TodoListViewController: UITableViewController {
     
     func addRowTableView() {
         //Update the table view
+        print(itemArray.count)
         let indexPath = IndexPath(row: itemArray.count - 1, section: 0)
         tableView.beginUpdates()
         tableView.insertRows(at: [indexPath], with: .automatic)
@@ -113,6 +131,7 @@ class TodoListViewController: UITableViewController {
             let newItem : Item = Item(context: self.context)
             newItem.title = textField.text!
             newItem.done = false
+            newItem.parentCategory = self.selectedCategory
             
             self.itemArray.append(newItem)
             self.saveItems()
@@ -148,7 +167,7 @@ extension TodoListViewController: UISearchBarDelegate {
         request.sortDescriptors = [NSSortDescriptor(key: "title", ascending: true)]
         
         //Attempt to fecth from DB the results we've specified in our 'request'
-        loadItems(with: request)
+        loadItems(with: request, predicate: request.predicate!)
         
         tableView.reloadData()
     }
