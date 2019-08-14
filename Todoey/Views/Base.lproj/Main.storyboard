@@ -42,7 +42,7 @@
                         </barButtonItem>
                     </navigationItem>
                     <connections>
-                        <segue destination="3yp-Bv-zw7" kind="show" identifier="goToItems" id="Awx-wg-Px9"/>
+                        <segue destination="3yp-Bv-zw7" kind="show" identifier="goToItems" id="OqL-gw-4ix"/>
                     </connections>
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="qKX-YZ-wLU" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -111,7 +111,7 @@
                     </navigationBar>
                     <nil name="viewControllers"/>
                     <connections>
-                        <segue destination="VaG-EL-2KY" kind="relationship" relationship="rootViewController" id="E20-Fc-ckF"/>
+                        <segue destination="VaG-EL-2KY" kind="relationship" relationship="rootViewController" id="cMb-Rb-8RL"/>
                     </connections>
                 </navigationController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="M0g-d9-Ixp" userLabel="First Responder" sceneMemberID="firstResponder"/>

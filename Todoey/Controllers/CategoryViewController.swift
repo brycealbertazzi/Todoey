@@ -8,11 +8,15 @@
 
 import UIKit
 import CoreData
+import RealmSwift
 
 class CategoryViewController: UITableViewController {
 
-    var categories: [Category] = [Category]()
-    let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
+    let realm = try! Realm()
+    
+    var categories: Results<Category>?
+    
+    //let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
     //UIApplication.shared corresponds to the current app as an object
     
     
@@ -23,15 +27,16 @@ class CategoryViewController: UITableViewController {
     }
 
     // MARK: - Table view data source method
-    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int
+    {
         
-        return categories.count
+        return categories?.count ?? 1
     }
     
     let CATEGORY_CELL_KEY: String = "CategoryCell"
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: CATEGORY_CELL_KEY, for: indexPath)
-        cell.textLabel?.text = categories[indexPath.row].name
+        cell.textLabel?.text = categories?[indexPath.row].name ?? "No Categories Added Yet"
         
         return cell
     }
@@ -39,37 +44,46 @@ class CategoryViewController: UITableViewController {
     //MARK: - TableView Delegate Methods
     let CATEGORY_ITEMS_KEY: String = "goToItems"
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        tableView.deselectRow(at: indexPath, animated: true)
-        
         //Go the the corresponding ToDo List
         performSegue(withIdentifier: CATEGORY_ITEMS_KEY, sender: self)
+        
+        tableView.deselectRow(at: indexPath, animated: true)
     }
     
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         //Load items in the selected category
         let destinationVC = segue.destination as! TodoListViewController
-        
         //Get the category which corresponds to the selected cell
         if let indexPath = tableView.indexPathForSelectedRow {
-            destinationVC.selectedCategory = categories[indexPath.row]
+            destinationVC.selectedCategory = categories?[indexPath.row]
+        } else {
+            print("Could not get index path for selected category row")
         }
     }
     
     //MARK: - TableView Manupulation Methods, CRUD
-    func saveCategories() {
+    func save(category: Category) {
         do {
-            try context.save()
+            try realm.write {
+                realm.add(category)
+            }
         } catch {
             print("Error saving categories \(error)")
         }
     }
     
-    func loadCategories(with request: NSFetchRequest<Category> = Category.fetchRequest()) {
-        do {
-            categories = try context.fetch(request)
-        } catch {
-            print("Error loading categories \(error)")
-        }
+    func loadCategories() {
+
+        //Sets categories array to an List of all category ojects saved in Realm
+        categories = realm.objects(Category.self)
+        //Don't need to append to categories when add button its pressed b/c Results<> autoupdates
+        
+        
+//        do {
+//            categories = try context.fetch(request)
+//        } catch {
+//            print("Error loading categories \(error)")
+//        }
     }
     
     //MARK: - Add New Categories
@@ -77,14 +91,14 @@ class CategoryViewController: UITableViewController {
         var textField = UITextField()
         let alert = UIAlertController(title: "Add category", message: "", preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: "Add", style: .default, handler: { (action) in
-            let newCategory = Category(context: self.context)
-            newCategory.name = textField.text
-            self.categories.append(newCategory)
-            self.saveCategories()
+            let newCategory = Category()
+            newCategory.name = textField.text!
+            //self.categories.append(newCategory)
+            self.save(category: newCategory)
             
             //Update the table view
             self.tableView.beginUpdates()
-            let indexPath = IndexPath(row: self.categories.count - 1, section: 0)
+            let indexPath = IndexPath(row: self.categories!.count - 1, section: 0)
             self.tableView.insertRows(at: [indexPath], with: .automatic)
             self.tableView.endUpdates()
         }))
