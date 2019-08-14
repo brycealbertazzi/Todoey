@@ -10,7 +10,8 @@ import UIKit
 import CoreData
 import RealmSwift
 
-class CategoryViewController: UITableViewController {
+
+class CategoryViewController: SwipeTableViewController {
 
     let realm = try! Realm()
     
@@ -29,14 +30,14 @@ class CategoryViewController: UITableViewController {
     // MARK: - Table view data source method
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int
     {
-        
         return categories?.count ?? 1
     }
     
-    let CATEGORY_CELL_KEY: String = "CategoryCell"
+    
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: CATEGORY_CELL_KEY, for: indexPath)
-        cell.textLabel?.text = categories?[indexPath.row].name ?? "No Categories Added Yet"
+        
+        let cell = super.tableView(tableView, cellForRowAt: indexPath)
+        cell.textLabel?.text = categories?[indexPath.row].name ?? "No Categories Added"
         
         return cell
     }
@@ -61,6 +62,18 @@ class CategoryViewController: UITableViewController {
         }
     }
     
+    override func updateModel(at indexPath: IndexPath) {
+        if let categoryForDeletion = self.categories?[indexPath.row] {
+            do {
+                try realm.write {
+                    realm.delete(categoryForDeletion)
+                }
+            } catch {
+                print("Error deleting category \(error)")
+            }
+        }
+    }
+    
     //MARK: - TableView Manupulation Methods, CRUD
     func save(category: Category) {
         do {
@@ -78,12 +91,6 @@ class CategoryViewController: UITableViewController {
         categories = realm.objects(Category.self)
         //Don't need to append to categories when add button its pressed b/c Results<> autoupdates
         
-        
-//        do {
-//            categories = try context.fetch(request)
-//        } catch {
-//            print("Error loading categories \(error)")
-//        }
     }
     
     //MARK: - Add New Categories
@@ -110,5 +117,5 @@ class CategoryViewController: UITableViewController {
         present(alert, animated: true, completion: nil)
     }
     
-
 }
+

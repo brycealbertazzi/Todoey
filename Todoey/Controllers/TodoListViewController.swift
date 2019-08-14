@@ -9,7 +9,7 @@
 import UIKit
 import RealmSwift
 
-class TodoListViewController: UITableViewController {
+class TodoListViewController: SwipeTableViewController {
     let realm = try! Realm()
     
     let ITEM_ARRAY_KEY: String = "ItemArrayKey"
@@ -37,26 +37,10 @@ class TodoListViewController: UITableViewController {
     //let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
     //UIApplication.shared corresponds to the current app as an object
     
-   func loadItems(/*with request: NSFetchRequest<Item> = /*Default Val*/ Item.fetchRequest(), predicate: NSPredicate? = nil*/) {
+   func loadItems() {
     
         todoItems = selectedCategory?.items.sorted(byKeyPath: "title", ascending: true)
     
-/*****************************************************************************/
-//        //Read data from database
-//        do {
-//            itemArray = try context.fetch(request) //Load itemArray with the contents from the request
-//        } catch {
-//            print("Error fetching data from context \(error)")
-//        }
-//
-//        let categoryPredicate = NSPredicate(format: "parentCategory.name MATCHES %@", selectedCategory!.name!)
-//
-//        if let additionalPredicate = predicate {
-//            request.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [categoryPredicate, additionalPredicate])
-//        } else {
-//            request.predicate = categoryPredicate
-//        }
-///*****************************************************************************/
      }
     
     //MARK: - Tableview Datasource Methods
@@ -64,9 +48,9 @@ class TodoListViewController: UITableViewController {
         return todoItems?.count ?? 1
     }
     
-    let CELL_ID = "ToDoItemCell"
+    
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: CELL_ID, for: indexPath)
+        let cell = super.tableView(tableView, cellForRowAt: indexPath)
         
         if let item = todoItems?[indexPath.row] {
             cell.textLabel?.text = item.title
@@ -111,26 +95,16 @@ class TodoListViewController: UITableViewController {
         tableView.endUpdates()
     }
     
-    func deleteItem(rowIndex: Int) {
-        //Update the table view
-        if let item = todoItems?[rowIndex] {
+    override func updateModel(at indexPath: IndexPath) {
+        if let item = todoItems?[indexPath.row] {
             do {
-               try realm.write {
+                try realm.write {
                     realm.delete(item)
                 }
             } catch {
                 print("Unable to delete item \(error)")
             }
         }
-        
-//        let indexPath = IndexPath(row: rowIndex, section: 0)
-//        context.delete(itemArray[rowIndex]) //Delete from database
-//        itemArray.remove(at: rowIndex) //Remove from itemArray
-//        tableView.beginUpdates()
-//        tableView.deleteRows(at: [indexPath], with: .automatic)
-//        tableView.endUpdates()
-//
-//        saveItems()
     }
     
     //MARK: - Add New Items
@@ -170,41 +144,23 @@ class TodoListViewController: UITableViewController {
     }
     
 }
-
 extension TodoListViewController: UISearchBarDelegate {
-    //MARK: = Searchbar methods
-    
-    
-    
+    //MARK: Search Bar Methods
     func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
         
         //Update the todoItems to match the results specified by the predicate
         todoItems = todoItems?.filter("title CONTAINS[cd] %@", searchBar.text!).sorted(byKeyPath: "dateCreated", ascending: true)
         
         tableView.reloadData()
-
-/**************************************************/
-//        //Query the DB to get the results the user is looking for
-//        let request : NSFetchRequest<Item> = Item.fetchRequest()
-//
-//        //NSPredicate is a specification class for how data should be fetched
-//        request.predicate = NSPredicate(format: "title BEGINSWITH[cd] %@", searchBar.text!)
-//        //For all items in itemArray search for the ones whose title property begins with %@(whatever is typed in the searchbar)
-//
-//        //Sorts our results from A-Z
-//        request.sortDescriptors = [NSSortDescriptor(key: "title", ascending: true)]
-//
-//        //Attempt to fecth from DB the results we've specified in our 'request'
-//loadItems(with: request, predicate: request.predicate!)
-/**************************************************/
+        
     }
-
+    
     func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
         if searchBar.text?.count == 0 {
             //If the searchbar is empty
             loadItems() //Show all existing items in table view
             tableView.reloadData()
-
+            
             DispatchQueue.main.async { //To run this code on the main queue (in the foreground)
                 searchBar.resignFirstResponder()
             }
@@ -214,5 +170,4 @@ extension TodoListViewController: UISearchBarDelegate {
             tableView.reloadData()
         }
     }
-
 }
