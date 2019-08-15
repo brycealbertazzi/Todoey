@@ -61,7 +61,7 @@ class TodoListViewController: SwipeTableViewController {
     
    func loadItems() {
     
-        todoItems = selectedCategory?.items.sorted(byKeyPath: "title", ascending: true)
+        todoItems = selectedCategory?.items.sorted(byKeyPath: "dateCreated", ascending: true)
     
      }
     
@@ -78,7 +78,7 @@ class TodoListViewController: SwipeTableViewController {
             cell.textLabel?.text = item.title
             
             let c = selectedCategory?.colorBG
-            if let color = UIColor(hexString: c)?.darken(byPercentage: CGFloat(CGFloat(indexPath.row) / CGFloat(todoItems!.count))) {
+            if let color = UIColor(hexString: c)?.darken(byPercentage: CGFloat(CGFloat(indexPath.row) / CGFloat(todoItems!.count)) / 1.5) {
                 cell.backgroundColor = color
             }
             
@@ -114,15 +114,6 @@ class TodoListViewController: SwipeTableViewController {
         tableView.deselectRow(at: indexPath, animated: true)
     }
     
-    func addRowTableView() {
-        //Update the table view
-        print(todoItems!.count)
-        let indexPath = IndexPath(row: todoItems!.count - 1, section: 0)
-        tableView.beginUpdates()
-        tableView.insertRows(at: [indexPath], with: .automatic)
-        tableView.endUpdates()
-    }
-    
     override func updateModel(at indexPath: IndexPath) {
         if let item = todoItems?[indexPath.row] {
             do {
@@ -150,8 +141,8 @@ class TodoListViewController: SwipeTableViewController {
                         newItem.title = textField.text!
                         newItem.dateCreated = Date()
                         currentCategory.items.append(newItem)
-                        
                     }
+                    self.loadItems()
                 } catch {
                     print("Error saving items in category \(error)")
                 }
@@ -159,7 +150,7 @@ class TodoListViewController: SwipeTableViewController {
             } else {
                print("Current category does not exist")
             }
-            self.addRowTableView()
+            self.tableView.reloadData()
         }
         
         alert.addTextField { (alertTextField) in
