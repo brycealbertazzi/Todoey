@@ -9,7 +9,7 @@
 import UIKit
 import CoreData
 import RealmSwift
-
+import ChameleonFramework
 
 class CategoryViewController: SwipeTableViewController {
 
@@ -25,6 +25,7 @@ class CategoryViewController: SwipeTableViewController {
         super.viewDidLoad()
         
         loadCategories()
+        tableView.separatorStyle = .none
     }
 
     // MARK: - Table view data source method
@@ -37,7 +38,9 @@ class CategoryViewController: SwipeTableViewController {
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         
         let cell = super.tableView(tableView, cellForRowAt: indexPath)
+        cell.textLabel?.textColor = UIColor.flatWhite()
         cell.textLabel?.text = categories?[indexPath.row].name ?? "No Categories Added"
+        cell.backgroundColor = UIColor(hexString: categories?[indexPath.row].colorBG)
         
         return cell
     }
@@ -90,7 +93,6 @@ class CategoryViewController: SwipeTableViewController {
         //Sets categories array to an List of all category ojects saved in Realm
         categories = realm.objects(Category.self)
         //Don't need to append to categories when add button its pressed b/c Results<> autoupdates
-        
     }
     
     //MARK: - Add New Categories
@@ -100,8 +102,12 @@ class CategoryViewController: SwipeTableViewController {
         alert.addAction(UIAlertAction(title: "Add", style: .default, handler: { (action) in
             let newCategory = Category()
             newCategory.name = textField.text!
+            if let newColor = UIColor.randomFlat()?.hexValue() {
+                newCategory.colorBG = newColor
+            } else {newCategory.colorBG = "#95A4A5"}
             //self.categories.append(newCategory)
             self.save(category: newCategory)
+            
             
             //Update the table view
             self.tableView.beginUpdates()

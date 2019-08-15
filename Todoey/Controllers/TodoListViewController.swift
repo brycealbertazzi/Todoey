@@ -8,6 +8,7 @@
 
 import UIKit
 import RealmSwift
+import ChameleonFramework
 
 class TodoListViewController: SwipeTableViewController {
     let realm = try! Realm()
@@ -28,8 +29,29 @@ class TodoListViewController: SwipeTableViewController {
         super.viewDidLoad()
         // Do any additional setup after loading the view
         
-        print(FileManager.default.urls(for: .documentDirectory, in: .userDomainMask))
+        tableView.separatorStyle = .none
         
+    }
+    
+    @IBOutlet weak var SearchBar: UISearchBar!
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(true)
+        if let colorHex = selectedCategory?.colorBG {
+            guard let navBar = navigationController?.navigationBar else {fatalError("Navigation Controller does not exist")}
+            
+            navBar.barTintColor = UIColor(hexString: colorHex)
+            title = selectedCategory!.name
+            SearchBar.barTintColor = UIColor(hexString: colorHex)
+            navBar.tintColor = UIColor.flatWhite()
+            navBar.largeTitleTextAttributes = [NSAttributedString.Key.foregroundColor : UIColor.flatWhite()!]
+        }
+    }
+    
+    override func viewWillDisappear(_ animated: Bool) {
+        guard let origionalColor = UIColor(hexString: "1D9BF6") else {
+            fatalError()
+        }
+        navigationController?.navigationBar.barTintColor = origionalColor
     }
     
     
@@ -51,9 +73,15 @@ class TodoListViewController: SwipeTableViewController {
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = super.tableView(tableView, cellForRowAt: indexPath)
-        
+        cell.textLabel?.textColor = UIColor.flatWhite()
         if let item = todoItems?[indexPath.row] {
             cell.textLabel?.text = item.title
+            
+            let c = selectedCategory?.colorBG
+            if let color = UIColor(hexString: c)?.darken(byPercentage: CGFloat(CGFloat(indexPath.row) / CGFloat(todoItems!.count))) {
+                cell.backgroundColor = color
+            }
+            
             //Check if previously checked in previous app sessions
             cell.accessoryType = item.done ? .checkmark : .none
         } else {
@@ -122,6 +150,7 @@ class TodoListViewController: SwipeTableViewController {
                         newItem.title = textField.text!
                         newItem.dateCreated = Date()
                         currentCategory.items.append(newItem)
+                        
                     }
                 } catch {
                     print("Error saving items in category \(error)")
