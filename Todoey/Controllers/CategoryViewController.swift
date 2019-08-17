@@ -26,6 +26,7 @@ class CategoryViewController: SwipeTableViewController {
         
         loadCategories()
         tableView.separatorStyle = .none
+        
     }
 
     // MARK: - Table view data source method
@@ -36,7 +37,6 @@ class CategoryViewController: SwipeTableViewController {
     
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        
         let cell = super.tableView(tableView, cellForRowAt: indexPath)
         cell.textLabel?.textColor = UIColor.flatWhite()
         cell.textLabel?.text = categories?[indexPath.row].name ?? "No Categories Added"
@@ -44,6 +44,7 @@ class CategoryViewController: SwipeTableViewController {
         
         return cell
     }
+    
     
     //MARK: - TableView Delegate Methods
     let CATEGORY_ITEMS_KEY: String = "goToItems"
@@ -91,7 +92,7 @@ class CategoryViewController: SwipeTableViewController {
     func loadCategories() {
 
         //Sets categories array to an List of all category ojects saved in Realm
-        categories = realm.objects(Category.self)
+        categories = realm.objects(Category.self).sorted(byKeyPath: "dateCreated", ascending: false)
         //Don't need to append to categories when add button its pressed b/c Results<> autoupdates
     }
     
@@ -102,6 +103,7 @@ class CategoryViewController: SwipeTableViewController {
         alert.addAction(UIAlertAction(title: "Add", style: .default, handler: { (action) in
             let newCategory = Category()
             newCategory.name = textField.text!
+            newCategory.dateCreated = Date()
             if let newColor = UIColor.randomFlat()?.hexValue() {
                 newCategory.colorBG = newColor
             } else {newCategory.colorBG = "#95A4A5"}
@@ -110,16 +112,14 @@ class CategoryViewController: SwipeTableViewController {
             
             
             //Update the table view
-            self.tableView.beginUpdates()
-            let indexPath = IndexPath(row: self.categories!.count - 1, section: 0)
-            self.tableView.insertRows(at: [indexPath], with: .automatic)
-            self.tableView.endUpdates()
+            self.tableView.reloadData()
         }))
         
         alert.addTextField { (alertTextField) in
             alertTextField.placeholder = "Create new category"
             textField = alertTextField
         }
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
         present(alert, animated: true, completion: nil)
     }
     

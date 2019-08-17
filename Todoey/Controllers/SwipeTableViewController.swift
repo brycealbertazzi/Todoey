@@ -21,6 +21,7 @@ class SwipeTableViewController: UITableViewController, SwipeTableViewCellDelegat
         // Uncomment the following line to display an Edit button in the navigation bar for this view controller.
         // self.navigationItem.rightBarButtonItem = self.editButtonItem
         tableView.rowHeight = 80
+        navigationController?.navigationBar.barTintColor = UIColor.flatGreen()
     }
     
     //MARK: - Table view datasource methods
@@ -29,7 +30,7 @@ class SwipeTableViewController: UITableViewController, SwipeTableViewCellDelegat
         let cell = tableView.dequeueReusableCell(withIdentifier: CELL_KEY, for: indexPath) as! SwipeTableViewCell
         
         cell.delegate = self
-        
+        print("Cell loaded")
         return cell
     }
     

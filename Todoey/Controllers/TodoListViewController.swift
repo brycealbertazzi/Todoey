@@ -48,7 +48,7 @@ class TodoListViewController: SwipeTableViewController {
     }
     
     override func viewWillDisappear(_ animated: Bool) {
-        guard let origionalColor = UIColor(hexString: "1D9BF6") else {
+        guard let origionalColor = UIColor.flatGreen() else {
             fatalError()
         }
         navigationController?.navigationBar.barTintColor = origionalColor
@@ -61,7 +61,7 @@ class TodoListViewController: SwipeTableViewController {
     
    func loadItems() {
     
-        todoItems = selectedCategory?.items.sorted(byKeyPath: "dateCreated", ascending: true)
+        todoItems = selectedCategory?.items.sorted(byKeyPath: "dateCreated", ascending: false)
     
      }
     
@@ -74,11 +74,12 @@ class TodoListViewController: SwipeTableViewController {
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = super.tableView(tableView, cellForRowAt: indexPath)
         cell.textLabel?.textColor = UIColor.flatWhite()
+        
         if let item = todoItems?[indexPath.row] {
             cell.textLabel?.text = item.title
             
             let c = selectedCategory?.colorBG
-            if let color = UIColor(hexString: c)?.darken(byPercentage: CGFloat(CGFloat(indexPath.row) / CGFloat(todoItems!.count)) / 1.5) {
+            if let color = UIColor(hexString: c)?.darken(byPercentage: CGFloat(CGFloat(indexPath.row) / CGFloat(todoItems!.count)) / 2.5) {
                 cell.backgroundColor = color
             }
             
@@ -160,6 +161,7 @@ class TodoListViewController: SwipeTableViewController {
         }
 
         alert.addAction(action)
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
         present(alert, animated: true, completion: nil)
     }
     
